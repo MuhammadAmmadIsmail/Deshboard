@@ -1,6 +1,15 @@
 [build]
   publish = "build"
-  command = "python -m pip install -r requirements.txt && python app.py"
+  command = "bash build.sh"
 
 [build.environment]
   PYTHON_VERSION = "3.11.12"
+```
+
+**Additional recommendations:**
+
+1. **Remove the `MISE_PYTHON_COMPILE` line** — it won't help if mise itself can't find the binary
+2. **Verify your `runtime.txt`** is in the root directory (same level as `netlify.toml`)
+3. **Check if you need a Procfile** for Netlify to properly run your Dash app:
+```
+   web: gunicorn --bind 0.0.0.0:$PORT app:server
