@@ -30,26 +30,29 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ========================================== 
-# PATHS
+# PATHS (LOCAL FILES ONLY)
 # ========================================== 
 model_event_path = "model/seismic_event_occurrence_model_v2.cbm"
 model_magnitude_path = "model/seismic_magnitude_model_v2.cbm"
 model_traffic_path = "model/seismic_traffic_light_3class_model_v2.cbm"
 medians_path = "model/train_medians_v2.pkl"
 threshold_path = "model/optimal_event_threshold_v2.txt"
+<<<<<<< HEAD
 
 # Google Drive file ID - replace with your actual file ID
 GOOGLE_DRIVE_FILE_ID = "https://drive.google.com/file/d/1Idwu1OOaMObPVVCNt6xT0Xpq2IjBjdW6/view?usp=sharing"  # Extract from share link
+=======
+>>>>>>> 7e87ec6 (added runtime file)
 operational_data_path = "operational_seismic_linear_decay121.csv"
 
 # ========================================== 
-# HELPER: Load CatBoost models with ONNX fallback
+# LOAD MODELS WITH FALLBACK
 # ========================================== 
 @st.cache_resource
 def load_models_with_fallback():
     """
     Try to load CatBoost models.
-    If CatBoost unavailable, use pickle-based predictions cache.
+    If CatBoost unavailable, use cached predictions.
     """
     try:
         from catboost import CatBoostClassifier, CatBoostRegressor, Pool
@@ -78,10 +81,9 @@ def load_models_with_fallback():
             'mode': 'catboost'
         }
     
-    except ImportError:
+    except Exception as e:
         st.warning("⚠️ CatBoost not available. Using cached predictions...")
         
-        # Fallback: Load pre-computed predictions from cache
         predictions_cache = "predictions_cache.pkl"
         try:
             with open(predictions_cache, 'rb') as f:
@@ -89,39 +91,17 @@ def load_models_with_fallback():
             cache['mode'] = 'cached'
             return cache
         except:
-            st.error("❌ Neither CatBoost nor prediction cache available!")
+            st.error("❌ Failed to load models!")
             return None
 
 @st.cache_data
 def load_data():
-    """Load operational data from Google Drive"""
-    import os
-    
-    # Check if file exists locally
-    if os.path.exists(operational_data_path):
-        try:
-            df = pd.read_csv(operational_data_path, low_memory=False)
-            return df
-        except Exception as e:
-            st.warning(f"⚠️ Error reading local file: {e}")
-    
-    # Download from Google Drive if not local
+    """Load operational data from local CSV file"""
     try:
-        st.info("📥 Downloading dataset from Google Drive...")
-        url = f"https://drive.google.com/uc?id={GOOGLE_DRIVE_FILE_ID}&export=download"
-        df = pd.read_csv(url, low_memory=False)
-        
-        # Cache locally for future runs
-        df.to_csv(operational_data_path, index=False)
-        st.success("✅ Dataset downloaded and cached!")
+        df = pd.read_csv(operational_data_path, low_memory=False)
         return df
-    
-    except Exception as e:
-        st.error(f"❌ Failed to download dataset from Google Drive: {e}")
-        st.error("Please check if:")
-        st.error("1. The Google Drive file ID is correct")
-        st.error("2. The file is set to 'Anyone with link can view'")
-        st.error("3. Your internet connection is working")
+    except FileNotFoundError:
+        st.error(f"❌ Data file not found: {operational_data_path}")
         return None
 
 # Load models and data
