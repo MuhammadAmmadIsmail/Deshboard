@@ -32,11 +32,11 @@ st.markdown("""
 # ========================================== 
 # PATHS (LOCAL FILES ONLY)
 # ========================================== 
-model_event_path = "model/seismic_event_occurrence_model_v2.cbm"
-model_magnitude_path = "model/seismic_magnitude_model_v2.cbm"
-model_traffic_path = "model/seismic_traffic_light_3class_model_v2.cbm"
-medians_path = "model/train_medians_v2.pkl"
-threshold_path = "model/optimal_event_threshold_v2.txt"
+model_event_path = "seismic_event_occurrence_model_v2.cbm"
+model_magnitude_path = "seismic_magnitude_model_v2.cbm"
+model_traffic_path = "seismic_traffic_light_3class_model_v2.cbm"
+medians_path = "train_medians_v2.pkl"
+threshold_path = "optimal_event_threshold_v2.txt"
 operational_data_path = "test_dataset.csv"
 
 # ========================================== 
