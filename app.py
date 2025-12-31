@@ -32,11 +32,14 @@ st.markdown("""
 # ========================================== 
 # PATHS
 # ========================================== 
-model_event_path = "seismic_event_occurrence_model_v2.cbm"
-model_magnitude_path = "seismic_magnitude_model_v2.cbm"
-model_traffic_path = "seismic_traffic_light_3class_model_v2.cbm"
-medians_path = "train_medians_v2.pkl"
-threshold_path = "optimal_event_threshold_v2.txt"
+model_event_path = "models/seismic_event_occurrence_model_v2.cbm"
+model_magnitude_path = "models/seismic_magnitude_model_v2.cbm"
+model_traffic_path = "models/seismic_traffic_light_3class_model_v2.cbm"
+medians_path = "models/train_medians_v2.pkl"
+threshold_path = "models/optimal_event_threshold_v2.txt"
+
+# Google Drive file ID - replace with your actual file ID
+GOOGLE_DRIVE_FILE_ID = "https://drive.google.com/file/d/1Idwu1OOaMObPVVCNt6xT0Xpq2IjBjdW6/view?usp=sharing"  # Extract from share link
 operational_data_path = "operational_seismic_linear_decay121.csv"
 
 # ========================================== 
@@ -91,12 +94,34 @@ def load_models_with_fallback():
 
 @st.cache_data
 def load_data():
-    """Load operational data"""
+    """Load operational data from Google Drive"""
+    import os
+    
+    # Check if file exists locally
+    if os.path.exists(operational_data_path):
+        try:
+            df = pd.read_csv(operational_data_path, low_memory=False)
+            return df
+        except Exception as e:
+            st.warning(f"⚠️ Error reading local file: {e}")
+    
+    # Download from Google Drive if not local
     try:
-        df = pd.read_csv(operational_data_path, low_memory=False)
+        st.info("📥 Downloading dataset from Google Drive...")
+        url = f"https://drive.google.com/uc?id={GOOGLE_DRIVE_FILE_ID}&export=download"
+        df = pd.read_csv(url, low_memory=False)
+        
+        # Cache locally for future runs
+        df.to_csv(operational_data_path, index=False)
+        st.success("✅ Dataset downloaded and cached!")
         return df
-    except FileNotFoundError:
-        st.error(f"❌ Data file not found: {operational_data_path}")
+    
+    except Exception as e:
+        st.error(f"❌ Failed to download dataset from Google Drive: {e}")
+        st.error("Please check if:")
+        st.error("1. The Google Drive file ID is correct")
+        st.error("2. The file is set to 'Anyone with link can view'")
+        st.error("3. Your internet connection is working")
         return None
 
 # Load models and data
