@@ -37,7 +37,7 @@ model_magnitude_path = "model/seismic_magnitude_model_v2.cbm"
 model_traffic_path = "model/seismic_traffic_light_3class_model_v2.cbm"
 medians_path = "model/train_medians_v2.pkl"
 threshold_path = "model/optimal_event_threshold_v2.txt"
-operational_data_path = "operational_seismic_linear_decay121.csv"
+operational_data_path = "test_dataset.csv"
 
 # ========================================== 
 # LOAD MODELS WITH FALLBACK
@@ -353,7 +353,10 @@ if data_loaded:
     
     # Create main plot
     if len(df_filtered) > 0:
-        fig = go.Figure()
+        from plotly.subplots import make_subplots
+        
+        # Create figure with secondary y-axis
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
         
         var_colors = ['#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#16a085', '#d35400']
         
@@ -366,11 +369,10 @@ if data_loaded:
                     mode='lines',
                     name=var_label,
                     line=dict(color=var_colors[idx % len(var_colors)], width=1.5),
-                    yaxis='y' if idx == 0 else f'y{idx+1}',
                     hovertemplate=f'{var_label}: %{{y:.2f}}'
-                ))
+                ), secondary_y=False)
         
-        # Add predicted events
+        # Add predicted events on secondary y-axis
         events_df = df_filtered[df_filtered['event_pred_dynamic'] == 1].copy()
         if len(events_df) > 0:
             hover_text = []
@@ -393,11 +395,10 @@ if data_loaded:
                     symbol='diamond'
                 ),
                 text=hover_text,
-                hovertemplate='%{text}',
-                yaxis='y2'
-            ))
+                hovertemplate='%{text}'
+            ), secondary_y=True)
         
-        # Add actual events
+        # Add actual events on secondary y-axis
         if has_ground_truth and show_actual:
             actual_events = df_filtered[df_filtered['event_actual'] == 1].copy()
             if len(actual_events) > 0:
@@ -407,16 +408,15 @@ if data_loaded:
                     mode='markers',
                     name='Actual Events',
                     marker=dict(size=10, color='black', symbol='x', line=dict(width=2)),
-                    yaxis='y2',
                     hovertemplate='Actual Magnitude: %{y:.3f}'
-                ))
+                ), secondary_y=True)
         
         # Update layout
         fig.update_xaxes(title_text="Time", showgrid=True, gridcolor='lightgray')
         if selected_vars:
             first_var_label = operational_vars.get(selected_vars[0], selected_vars[0])
             fig.update_yaxes(title_text=first_var_label, secondary_y=False, showgrid=True)
-        fig.update_yaxes(title_text="Event Magnitude", secondary_y=True, yaxis='y2')
+        fig.update_yaxes(title_text="Event Magnitude", secondary_y=True, showgrid=False)
         
         fig.update_layout(
             title=f"Seismic Monitoring" + (f": {start_date} to {end_date}" if has_timestamp else ""),
