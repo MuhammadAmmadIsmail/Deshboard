@@ -32,11 +32,11 @@ st.markdown("""
 # ========================================== 
 # PATHS
 # ========================================== 
-model_event_path = "models/seismic_event_occurrence_model_v2.cbm"
-model_magnitude_path = "models/seismic_magnitude_model_v2.cbm"
-model_traffic_path = "models/seismic_traffic_light_3class_model_v2.cbm"
-medians_path = "models/train_medians_v2.pkl"
-threshold_path = "models/optimal_event_threshold_v2.txt"
+model_event_path = "model/seismic_event_occurrence_model_v2.cbm"
+model_magnitude_path = "model/seismic_magnitude_model_v2.cbm"
+model_traffic_path = "model/seismic_traffic_light_3class_model_v2.cbm"
+medians_path = "model/train_medians_v2.pkl"
+threshold_path = "model/optimal_event_threshold_v2.txt"
 
 # Google Drive file ID - replace with your actual file ID
 GOOGLE_DRIVE_FILE_ID = "https://drive.google.com/file/d/1Idwu1OOaMObPVVCNt6xT0Xpq2IjBjdW6/view?usp=sharing"  # Extract from share link
@@ -550,4 +550,5 @@ if data_loaded:
         st.success("✅ No events detected in this period")
 
 else:
+
     st.error("❌ Failed to load models or data. Please check file paths and dependencies.")
