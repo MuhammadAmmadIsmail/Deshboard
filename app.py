@@ -49,7 +49,7 @@ def load_models_with_fallback():
     If CatBoost unavailable, use cached predictions.
     """
     try:
-        from  import Classifier, CatBoostRegressor, Pool
+        from import Classifier, CatBoostRegressor, Pool
         try :        
             model_event = CatBoostClassifier()
             model_event.load_model(model_event_path)
@@ -529,3 +529,4 @@ if data_loaded:
 else:
 
     st.error("❌ Failed to load models or data. Please check file paths and dependencies.")
+
