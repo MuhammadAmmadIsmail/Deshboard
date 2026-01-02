@@ -48,8 +48,9 @@ def load_models_with_fallback():
     Try to load CatBoost models.
     If CatBoost unavailable, use cached predictions.
     """
-    from catboost import CatBoostClassifier, CatBoostRegressor, Pool
     try:
+        from catboost import CatBoostClassifier, CatBoostRegressor, Pool
+        
         model_event = CatBoostClassifier()
         model_event.load_model(model_event_path)
         
@@ -425,7 +426,7 @@ if data_loaded:
             margin=dict(r=150)
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     
     # Statistics
     col1, col2, col3, col4 = st.columns(4)
@@ -458,44 +459,62 @@ if data_loaded:
             marker=dict(colors=['#27ae60', '#f39c12', '#e74c3c'])
         )])
         fig_risk.update_layout(title="Risk Distribution", height=400)
-        st.plotly_chart(fig_risk, use_container_width=True)
+        st.plotly_chart(fig_risk, width='stretch')
     
     # Confusion matrix
     if has_ground_truth:
         with col2:
-            y_true = df_filtered['event_actual'].values
-            y_pred = df_filtered['event_pred_dynamic'].values
-            cm = confusion_matrix(y_true, y_pred)
-            tn, fp, fn, tp = cm.ravel()
+            try:
+                y_true = df_filtered['event_actual'].values
+                y_pred = df_filtered['event_pred_dynamic'].values
+                cm = confusion_matrix(y_true, y_pred)
+                
+                # Handle different confusion matrix sizes
+                cm_flat = cm.ravel()
+                if len(cm_flat) == 4:
+                    tn, fp, fn, tp = cm_flat
+                elif len(cm_flat) == 1:
+                    # Only one class present
+                    if y_true.sum() == 0 and y_pred.sum() == 0:
+                        tn, fp, fn, tp = cm_flat[0], 0, 0, 0
+                    elif y_true.sum() == len(y_true) and y_pred.sum() == len(y_pred):
+                        tn, fp, fn, tp = 0, 0, 0, cm_flat[0]
+                    else:
+                        tn, fp, fn, tp = 0, 0, 0, 0
+                else:
+                    tn, fp, fn, tp = 0, 0, 0, 0
+                
+                fig_cm = go.Figure(data=go.Heatmap(
+                    z=cm,
+                    x=['Pred: No', 'Pred: Event'],
+                    y=['Actual: No', 'Actual: Event'],
+                    text=cm,
+                    texttemplate='%{text}',
+                    colorscale='Blues'
+                ))
+                fig_cm.update_layout(title="Confusion Matrix", height=400)
+                st.plotly_chart(fig_cm, width='stretch')
+                
+                # Metrics
+                st.subheader("🎯 Performance Metrics")
+                col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+                
+                accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0
+                precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+                recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+                f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+                
+                with col_m1:
+                    st.metric("Accuracy", f"{accuracy*100:.2f}%")
+                with col_m2:
+                    st.metric("Precision", f"{precision*100:.2f}%")
+                with col_m3:
+                    st.metric("Recall", f"{recall*100:.2f}%")
+                with col_m4:
+                    st.metric("F1-Score", f"{f1*100:.2f}%")
             
-            fig_cm = go.Figure(data=go.Heatmap(
-                z=cm,
-                x=['Pred: No', 'Pred: Event'],
-                y=['Actual: No', 'Actual: Event'],
-                text=cm,
-                texttemplate='%{text}',
-                colorscale='Blues'
-            ))
-            fig_cm.update_layout(title="Confusion Matrix", height=400)
-            st.plotly_chart(fig_cm, use_container_width=True)
-            
-            # Metrics
-            st.subheader("🎯 Performance Metrics")
-            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-            
-            accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0
-            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-            f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-            
-            with col_m1:
-                st.metric("Accuracy", f"{accuracy*100:.2f}%")
-            with col_m2:
-                st.metric("Precision", f"{precision*100:.2f}%")
-            with col_m3:
-                st.metric("Recall", f"{recall*100:.2f}%")
-            with col_m4:
-                st.metric("F1-Score", f"{f1*100:.2f}%")
+            except Exception as e:
+                st.warning(f"⚠️ Could not generate confusion matrix: {str(e)}")
     
     # Event table
     st.subheader("⚠️ Detected Events")
@@ -518,12 +537,9 @@ if data_loaded:
             events_display['Actual Magnitude'] = events_display['magnitude_actual'].round(3)
             table_cols.append('Actual Magnitude')
         
-        st.dataframe(events_display[table_cols], use_container_width=True)
+        st.dataframe(events_display[table_cols], width='stretch')
     else:
         st.success("✅ No events detected in this period")
 
 else:
-
     st.error("❌ Failed to load models or data. Please check file paths and dependencies.")
-
-
